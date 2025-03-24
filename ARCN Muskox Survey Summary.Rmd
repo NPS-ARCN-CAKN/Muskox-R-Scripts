@@ -1,0 +1,427 @@
+---
+title: ''
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+date: ""
+---
+
+```{r setup, include=FALSE,echo=FALSE,warning=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(odbc)
+library(leaflet)
+library(DT)
+library(sf)
+
+# Database connection
+Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nuna_dev", Database = "ARCN_Muskox")
+
+
+# HOW TO USE THIS SCRIPT
+# ---------------------------------------------------------------------------
+# 1. Change the SurveyName parameter, below, to a valid SurveyName from the muskox monitoring database's Campaigns table (Uncomment the dbGetQuery function a few lines down to retrieve a list of available SurveyNames).
+# 2. Knit the document. This will result in a file called ARCN-Muskox-Survey-Summary.html. 
+# 3. The last code chunk in this script tries to copy ARCN-Muskox-Survey-Summary.html to a new file with the SurveyName (example: 'ARCN-Muskox-Survey-Summary.html' is copied to '1997 Cape Krusenstern Muskox Survey Summary.html'). This doesn't always work. The solution is to:
+# 4. Re-run the script inside R Studio by clicking Run -> Run All. This will definitely rename the output file with the SurveyName, but inspect the output file (example: 1997 Cape Krusenstern Muskox Survey Summary.html) to make sure it is as expected.
+# 5. Copy the output file to the appropriate survey subdirectory of O:\Monitoring\Vital Signs\Muskox\Data\
+
+
+# Change SurveyName to the name of the survey to write the summary report for
+# To get a list of SurveyNames execute the below query
+# dbGetQuery(Connection,"SELECT '# SurveyName = ''' + SurveyName + '''','# ' + Convert(Varchar(3),n) + ' records' as RecordCount FROM Dashboard ORDER BY SurveyName")
+# ---------------------------------------------------------------------
+# SurveyName = '1983 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '1984 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '1985 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '1988 Cape Krusenstern Muskox Survey'	# 1 records			
+# SurveyName = '1988 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
+# SurveyName = '1994 Cape Lisburne Muskox Survey'	# 24 records			
+# SurveyName = '1996 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '1997 Cape Krusenstern Muskox Survey'	# 6 records			
+# SurveyName = '1997 Cape Lisburne-Cape Krusenstern Muskoxen Census'	# 26 records
+# SurveyName = '1998 Cape Krusenstern Muskox Population Survey'	# 43 records			
+# SurveyName = '1998 Seward Peninsula Muskox Population Survey'	# 108 records			
+# SurveyName = '1999 Cape Krusenstern Muskox Survey'	# 35 records			
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 41 records			
+SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
+# SurveyName = '2011 Muskox Population Survey'	# 0 records			
+# SurveyName = '2012 Seward Peninsula Muskox Survey'	# 0 records			
+# SurveyName = '2013 Seward Peninsula Muskox Population Survey'	# 0 records			
+# SurveyName = '2014 Seward Peninsula Muskox Population Survey'	# 0 records			
+# SurveyName = '2015 Muskox Survey'	# 0 records
+
+```
+
+```{r,echo=FALSE,warning=FALSE}
+# Campaign details
+Sql = paste("SELECT 
+ [SurveyName]
+      ,[Year]
+      ,[Park]
+      ,[Personnel]
+      ,[StartDate]
+      ,[EndDate]
+      ,[IRMA_ReportCode]
+      ,[IRMA_RawDataCode]
+      ,[ProtocolVersion]
+      ,[Abstract]
+      ,[Comments]
+      ,[DataQualityNotes]
+      --,Convert(Varchar(40),[RecordInsertedDate]) as RecordInsertedDate
+      --,[RecordInsertedBy]
+      ,[ProcessingSteps]
+FROM Campaigns WHERE SurveyName='",SurveyName,"'",sep="")
+c = dbGetQuery(Connection,Sql)
+
+Abstract = c$Abstract
+
+
+
+# Survey observations
+Sql = paste("SELECT SurveyName, Date,GMU, Unit, GroupNumber, Calf,ShortYearling, Yearling, Adult, Bull, Cow, Unknown, Muskox, Observer
+--, BullAge2, BullAge3, BullAge4, BullAge4Plus, CowAge1, CowAge2, CowAge3, GroupSizeCategory, Random, GroupPriority, Waypoint, Aircraft
+, Lat, Lon, LocationDescription, SourceFilename, Notes
+--, SOPNumber, SOPVersion, CertificationDate, CertifiedBy, CertificationLevel, RecordInsertedDate, RecordInsertedBy, CCID, UCU
+-- , Geog
+FROM     Observations
+WHERE SurveyName='",SurveyName,"'
+ORDER BY GroupNumber",sep="")
+o = dbGetQuery(Connection,Sql)
+
+CurrentDate = format(Sys.Date(), "%A, %B %d, %Y")
+TableCounter = 1
+```
+
+# `r SurveyName`
+
+## *National Park Service, Alaska Region*
+
+Scott D. Miller\
+Information Technology Specialist, National Park Service, Arctic Inventory and Monitoring Network\
+240 W. 5th Ave\
+Anchorage, AK 99501
+
+`r CurrentDate`
+
+# Abstract
+
+`r Abstract`
+
+# Introduction
+
+Muskox populations are monitored in Cape Krusenstern National Monument and Bering Land Bridge National Preserve by the National Park Service (NPS), [Western Arctic National Parklands](https://www.nps.gov/cakr/learn/management/wear.htm) (WEAR) and the [Arctic Inventory and Monitoring Program](https://www.nps.gov/im/arcn/index.htm) (ARCN). NPS performs aerial and ground-based surveys on a periodic schedule to quantify the abundance and composition of muskox. This report summarizes the data compiled during the `r SurveyName`.
+
+# Methods
+
+ARCN has developed a standard protocol for monitoring muskox abundance and composition (Schmidt et al., 2018). This protocol and associated data quality standards (Schmidt, 2018) and standard operating procedures ensure that abundance and composition metrics can be computed in a repeatable way over time. The protocol and ancillary resources describing the methodology for this survey are available in the National Park Service's Integrated Resource Management Applications Portal at [https://irma.nps.gov/DataStore/Reference/Profile/2219896.](https://irma.nps.gov/DataStore/Reference/Profile/2219896)
+
+## Survey Details
+
+Details of the `r SurveyName` appear in Table 1.
+
+```{r, echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Survey details.",sep="")}
+knitr::kable(t(c %>% select(-Abstract,-DataQualityNotes,-ProcessingSteps)))
+TableCounter = TableCounter + 1
+
+```
+
+## Observation Teams(s)
+
+Table 2 lists the survey dates and observation teams for the `r SurveyName`.
+
+```{r,echo=FALSE,Waring=FALSE,tab.cap=paste("Table ",TableCounter,". Observation teams.",sep="")}
+knitr::kable(o %>% distinct(Date,Observer) %>% arrange(Date,Observer))
+TableCounter = TableCounter + 1
+```
+
+## Map
+
+A map of the survey area and muskox groups for which spatial coordinates were recorded appears in Figure 1. Symbol size is representative of group size.
+
+```{r,echo=FALSE,warning=FALSE}
+# Get the ADFG UCUs into a simple features data frame
+UCUs = dbGetQuery(Connection,"SELECT UCU, Feature.STAsText() AS WKT FROM ADFG_UCU")
+# Convert WKT to sf objects
+sf_data <- st_as_sf(UCUs, wkt = "WKT", crs = 4326)
+
+# Get the observations having valid lat/lons
+Points = o %>% filter(Lat > 1)
+MinLat = min(Points$Lat,na.rm=TRUE)
+MaxLat = max(Points$Lat,na.rm=TRUE)
+MinLon = min(Points$Lon,na.rm=TRUE)
+MaxLon = max(Points$Lon,na.rm=TRUE)
+MeanLat = mean(Points$Lat,na.rm=TRUE)
+MeanLon = mean(Points$Lon,na.rm=TRUE)
+# Break the group sizes out into categories so we can use it to show relative group size on the map. Muskox values can be way too large and consume the map space
+Points$Size = cut(Points$Muskox, breaks = 20, labels = FALSE, include.lowest = TRUE)
+
+# Get a bounding box to narrow in the map on the observations
+BoundingBox <- data.frame(
+  Lon = c(MinLon,MinLon,MaxLon,MaxLon,MinLon),  # Close the shape by repeating the first point
+  Lat = c(MinLat,MaxLat,MaxLat,MinLat,MinLat)
+)
+```
+
+```{r,echo=FALSE,warning=FALSE,fig.cap="Figure 1. Map of muskox observations. Symbol size represents group size. Note: only observations having spatial coordinates are shown."}
+
+
+
+# Build a Leaflet map
+if (nrow(Points) > 0){
+  leaflet(Points) %>%
+  
+    
+
+    
+    # Set the view
+    #setView(lng = MeanLon, lat = MeanLat, zoom = 8) %>% 
+    fitBounds(lng1 = MinLon, lat1 = MinLat, lng2 = MaxLon, lat2 = MaxLat) %>%
+
+    
+    # Bounding box  
+    addPolygons(
+    lng = BoundingBox$Lon,
+    lat = BoundingBox$Lat,
+    color = "gray",
+    weight = 2,
+    fillColor = "white",
+    fillOpacity = 0,
+    popup = "Survey area"
+    ) %>%
+    
+    # UCU boundaries
+    addPolygons(data = sf_data,weight=1,color='black',fillOpacity = 0.1,label=~UCU,labelOptions = labelOptions(style = list("font-size" = "24px","font-style" = "italic", "font-weight" = "bold","color"="Gray"),textOnly = TRUE,noHide=TRUE))    %>%
+  
+    # Muskox groups and labels
+    addCircleMarkers(lng = ~Lon, lat = ~Lat,label=~Muskox,radius=~Size,color='red',fillColor = 'red',stroke=FALSE,fillOpacity = 0.5,
+    labelOptions = labelOptions(noHide = TRUE, fill = FALSE, offset = c(5,2), textsize = "18px", textOnly = TRUE)
+    ) %>%
+    
+    # Background map (https://leaflet-extras.github.io/leaflet-providers/preview/)
+    #addTiles()  
+    #addProviderTiles("Esri.WorldImagery")
+    #addProviderTiles("Stadia.AlidadeSatellite")
+    #addProviderTiles("Stadia.StamenTerrain")
+    #addProviderTiles("Esri.WorldTopoMap")
+    #addProviderTiles("Esri.NatGeoWorldMap")
+    addProviderTiles("USGS.USTopo")
+} else {
+cat("There were no muskox groups having spatial coordinates for this survey")
+}
+
+```
+
+# Results
+
+## Units Surveyed
+
+```{r,echo=FALSE,warning=FALSE}
+# Get the distinct survey units
+Units = o %>% distinct(GMU,Unit) %>%mutate(Unit = as.numeric(Unit))  %>% arrange(GMU,Unit)
+```
+
+Table `r TableCounter` lists the units surveyed for the `r SurveyName` (`r nrow(Units)` survey units).
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Units surveyed.",sep="")}
+# Output the distinct survey units
+knitr::kable(Units)
+TableCounter = TableCounter + 1
+```
+
+Table `r TableCounter` summarizes the muskox counts by sex and age during the `r SurveyName`. Table `r TableCounter + 1` presents basic statistics about the muskox groups.
+
+## Counts by sex and age category.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Muskox counts by sex and age category.",sep="")}
+Summary = o %>% summarize(
+  Calf = round(sum(Calf),1),
+  ShortYearling = round(sum(ShortYearling),1),
+  Yearling = round(sum(Yearling),1),
+  Bull = round(sum(Bull),1),
+  Cow = round(sum(Cow),1),
+  Adult = round(sum(Adult),1),
+  Unknown = round(sum(Unknown),1),
+  Total = round(sum(Muskox),1),
+  Groups = n()
+  )
+knitr::kable(t(Summary))
+TableCounter = TableCounter + 1
+```
+
+## Summary Statistics
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Summary statistics.",sep="")}
+
+Stats = o %>% summarize(
+  `Mean group size` = round(mean(Muskox),1),
+  `Minimum group size` = round(min(Muskox),0),
+  `Maximum group size` = round(max(Muskox),0),
+  `Standard deviation` = round(sd(Muskox),1),
+  `Calf:Adult (%)` = round(sum(Calf)/sum(Adult)*100,1),
+  `Percent calves` = round(sum(Calf)/sum(Muskox)*100,1),
+  `ShortYearling:Adult (%)` = round(sum(ShortYearling)/sum(Adult)*100,1),
+  `Percent short yearlings` = round(sum(ShortYearling)/sum(Muskox)*100,1),
+  `Yearling:Adult (%)` = round(sum(Yearling)/sum(Adult)*100,1),
+  `Percent yearlings` = round(sum(Yearling)/sum(Muskox)*100,1),
+  Groups = round(n(),0)
+  )
+knitr::kable(t(Stats))
+TableCounter = TableCounter + 1
+
+```
+
+# Provenance
+
+The provenance of the information contained in this summary report appears in Table `r TableCounter`, below. Muskox surveys are conducted by the Western Arctic Parklands, Kotzebue, Alaska. Data deliverables are stored on a file server at the NPS Fairbanks Administrative Center (FAC) in Fairbanks, Alaska. Processed data are stored in an authoritative Microsoft SQL Server database, also at the FAC. After quality control procedures are conducted certified data are periodically uploaded to the IRMA Data Store.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter," Survey provenance and metadata..",sep="")}
+Sql = paste("SELECT DISTINCT SourceFilename, Convert(Date,RecordInsertedDate) as RecordInsertedDate FROM Observations WHERE SurveyName='",SurveyName,"' ORDER BY RecordInsertedDate",sep="")
+knitr::kable(dbGetQuery(Connection,Sql))
+TableCounter = TableCounter + 1
+
+ReportCode = c$IRMA_ReportCode
+ReportURL = paste("https://irma.nps.gov/DataStore/Reference/Profile/",ReportCode,sep="")
+DataCode = c$IRMA_RawDataCode
+DataURL = paste("https://irma.nps.gov/DataStore/Reference/Profile/",DataCode,sep="")
+ProtocolVersion = c$ProtocolVersion
+DataQualityNotes = c$DataQualityNotes
+ProcessingSteps = c$ProcessingSteps
+```
+
+Report IRMA Data Store Reference code: [`r ReportCode`](%60r%20ReportURL%60).\
+Raw data deliverables IRMA Data Store Reference code: [`r DataCode`](%60rDataURL%60).\
+Protocol version: `r ProtocolVersion`.\
+Data quality notes\
+`r DataQualityNotes`
+
+Processing steps\
+`r ProcessingSteps`.
+
+## Certification
+
+Data from Inventory and Monitoring projects proceeds through a disciplined life cycle from collection of raw field data deliverables through quality control measures and final certification for analytical use. Certification level definitions appear in Table `r TableCounter`. Note that data processing may be ongoing. The status in the table is only accurate through the current date.
+
+Table `r TableCounter`. Inventory and Monitoring dataset certification levels.
+
+| Level | Definition |
+|----|----|
+| Raw | 'Raw' data are data collected from the field with no further processing for quality |
+| Provisional | 'Provisional' data have undergone rudimentary quality control processing, are judged to be of high quality based on information and files available at the time of publication, but for which no secondary source such as a report exists to validate the data quality. Provisional records often belong to surveys that were performed in the past for which no report exists. |
+| Certified | 'Certified' data represent data of analytical quality. Quality control procedures exist, validation against secondary sources has been performed and/or the biologist who collected the data or the project leader have indicated it is of high quality. |
+
+A summary of the progress of data from the `r SurveyName` through the data processing life cycle appears in Table `r TableCounter + 1`. The SourceFilename is the name of the field data deliverable file from which the data were imported into the master muskox monitoring database.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Dataset certification summary.",sep="")}
+TableCounter = TableCounter + 1
+
+Sql = paste("SELECT   PctCertified, PctProvisional, SourceFilename
+FROM            Dashboard
+WHERE        (SurveyName = '",SurveyName,"')
+ORDER BY SurveyName",sep="")
+knitr::kable(t(dbGetQuery(Connection,Sql)))
+TableCounter = TableCounter + 1
+```
+
+## Dataset Sensitivity
+
+As Muskox are a designated species of commercial interest and, as such, data regarding their locations are sensitive (Lukin, 2019). Data should not be shared beyond the project leader, data manager and collaborators.
+
+# References
+
+Lukin, M. 2019. To: Wald EJ. Re: Handling of Protected Natural Resource Data - WEAR. Memorandum. Kotzebue, Alaska.[ https://irma.nps.gov/DataStore/Reference/Profile/2263472](https://irma.nps.gov/DataStore/Reference/Profile/2263472 "Click to go to Reference Profile page.")
+
+Schmidt, J.H. 2018. Monitoring muskoxen sex-age composition in Alaska: ARCN Inventory and Monitoring Network, data quality standards. Natural Resource Report. NPS/ARCN/NRR—2018/1798. National Park Service. Fort Collins, Colorado <https://irma.nps.gov/DataStore/Reference/Profile/2257368>
+
+Schmidt, J.H., H.L. Robison and S.D. Miller. 2018. Protocol implementation plan for monitoring muskox sex-age composition in the Arctic Network. Natural Resource Report. NPS/ARCN/NRR—2018/1795. National Park Service. Fort Collins, Colorado <https://irma.nps.gov/DataStore/Reference/Profile/2257221>
+
+# Quality Control Test Results
+
+The following quality control checks indicate potential data quality problems to be addressed or documented.
+
+## QC-1: Records missing spatial coordinates
+
+Ideally, all muskox observations should have spatial coordinates. This QC summary shows a count of records for the survey missing coordinates.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-1. QC_Observations_NoSpatialCoordinates query results.",sep=""),results='asis'}
+Sql = paste("SELECT * FROM QC_Observations_NoSpatialCoordinates WHERE SurveyName='",SurveyName,"'",sep="")
+
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
+## QC-2: Total muskox may not be summed properly
+
+The Muskox column of the Observations database table should sum to all the sex and age categories. This check shows records violating this assumption. False positives may result if a survey only counted animals without breaking them down into sub-categories.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-2. QC_Observations_TotalMuskoxNotSummingProperly query results.",sep=""),results='asis'}
+Sql = paste("SELECT [GroupNumber]
+,[Muskox]
+,[Total (calculated)]
+,[Calf]
+,[Yearling]
+,[Adult]
+,[Bull]
+,[Cow]
+,[Unknown]
+,[ShortYearling]
+--,[SourceFilename]
+,Notes
+ FROM [ARCN_Muskox].[dbo].[QC_Observations_TotalMuskoxNotSummingProperly]
+  WHERE SurveyName='",SurveyName,"' ORDER BY GroupNumber",sep="")
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
+## QC-3: Incorrect survey dates in the Campaigns table
+
+The Muskox column of the Observations database table should sum to all the sex and age categories. This check shows records violating this assumption. False positives may result if a survey only counted animals without breaking them down into sub-categories.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-3. QC_Campaigns_SurveyDatesMayBeIncorrect query results.",sep=""),results='asis'}
+Sql = paste("SELECT * FROM [QC_Campaigns_SurveyDatesMayBeIncorrect] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
+```{r,echo=FALSE,warning=FALSE,include=FALSE}
+# This section copies the output file to a new html file titled with the survey name
+# R doesn't seem to run this chunk during a knit operation so you'll have to set the SurveyName manually (way above) and then re-run this chunk to make sure the file gets copied correctly.
+
+  # Check if the file exists
+SourceFile = 'ARCN-Muskox-Survey-Summary.html'
+DestinationFile = paste(SurveyName," Summary.html",sep="")
+if (file.exists(DestinationFile)) {
+  file.remove(DestinationFile)
+}
+
+if (file.exists(SourceFile)) {
+  # Copy and rename the file
+  file.copy(from = SourceFile, to = DestinationFile,overwrite = TRUE)
+  cat(paste("File has been copied from ",SourceFile," to ",DestinationFile,".",sep=""))
+} else {
+  cat(paste("ERROR: Out put file was not renamed and saved.",sep=""))
+}
+
+```
