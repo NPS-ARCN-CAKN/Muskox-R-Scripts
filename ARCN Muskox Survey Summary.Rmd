@@ -48,8 +48,8 @@ Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nun
 # SurveyName = '1998 Seward Peninsula Muskox Population Survey'	# 108 records			
 # SurveyName = '1999 Cape Krusenstern Muskox Survey'	# 35 records			
 # SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 41 records			
-SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
-# SurveyName = '2011 Muskox Population Survey'	# 0 records			
+# SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
+SurveyName = '2011 Muskox Population Survey'	# 0 records			
 # SurveyName = '2012 Seward Peninsula Muskox Survey'	# 0 records			
 # SurveyName = '2013 Seward Peninsula Muskox Population Survey'	# 0 records			
 # SurveyName = '2014 Seward Peninsula Muskox Population Survey'	# 0 records			
@@ -168,21 +168,14 @@ BoundingBox <- data.frame(
 ```
 
 ```{r,echo=FALSE,warning=FALSE,fig.cap="Figure 1. Map of muskox observations. Symbol size represents group size. Note: only observations having spatial coordinates are shown."}
-
-
-
 # Build a Leaflet map
 if (nrow(Points) > 0){
   leaflet(Points) %>%
-  
-    
 
-    
     # Set the view
     #setView(lng = MeanLon, lat = MeanLat, zoom = 8) %>% 
     fitBounds(lng1 = MinLon, lat1 = MinLat, lng2 = MaxLon, lat2 = MaxLat) %>%
 
-    
     # Bounding box  
     addPolygons(
     lng = BoundingBox$Lon,
@@ -204,11 +197,10 @@ if (nrow(Points) > 0){
     
     # Background map (https://leaflet-extras.github.io/leaflet-providers/preview/)
     #addTiles()  
-    #addProviderTiles("Esri.WorldImagery")
-    #addProviderTiles("Stadia.AlidadeSatellite")
-    #addProviderTiles("Stadia.StamenTerrain")
-    #addProviderTiles("Esri.WorldTopoMap")
-    #addProviderTiles("Esri.NatGeoWorldMap")
+    #addProviderTiles("Esri.WorldImagery") # Imagery, no contextual labels.
+    #addProviderTiles("Stadia.StamenTerrain") # Nice terrain and colors but no contextual labels
+    #addProviderTiles("Esri.WorldTopoMap") # Very light, feature labels
+    #addProviderTiles("Esri.NatGeoWorldMap") # Nice maps, better as you zoom in. Labels.
     addProviderTiles("USGS.USTopo")
 } else {
 cat("There were no muskox groups having spatial coordinates for this survey")
@@ -222,7 +214,9 @@ cat("There were no muskox groups having spatial coordinates for this survey")
 
 ```{r,echo=FALSE,warning=FALSE}
 # Get the distinct survey units
-Units = o %>% distinct(GMU,Unit) %>%mutate(Unit = as.numeric(Unit))  %>% arrange(GMU,Unit)
+Units = o %>% distinct(GMU,Unit) %>%
+  #mutate(Unit = as.numeric(Unit))  %>% # If units are numeric and you want them to sort correctly
+  arrange(GMU,Unit)
 ```
 
 Table `r TableCounter` lists the units surveyed for the `r SurveyName` (`r nrow(Units)` survey units).
@@ -309,7 +303,7 @@ Data from Inventory and Monitoring projects proceeds through a disciplined life 
 Table `r TableCounter`. Inventory and Monitoring dataset certification levels.
 
 | Level | Definition |
-|----|----|
+|-----------------|-------------------------------------------------------|
 | Raw | 'Raw' data are data collected from the field with no further processing for quality |
 | Provisional | 'Provisional' data have undergone rudimentary quality control processing, are judged to be of high quality based on information and files available at the time of publication, but for which no secondary source such as a report exists to validate the data quality. Provisional records often belong to surveys that were performed in the past for which no report exists. |
 | Certified | 'Certified' data represent data of analytical quality. Quality control procedures exist, validation against secondary sources has been performed and/or the biologist who collected the data or the project leader have indicated it is of high quality. |
