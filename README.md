@@ -4,5 +4,4 @@ R scripts associated with the monitoring of muskox in [Bering Land Bridge Nation
 
 Information about the monitoring, including the protocol, methods, standard operating procedures, reports and ancillary products are available from the National Park Service Integrated Resource Management Applications portal at <https://irma.nps.gov/DataStore/Reference/Profile/2219896>.
 
-Public profile: [https://www.nps.gov/im/arcn/muskox.htm](https://www.nps.gov/im/arcn/muskox.htm).
-
+Public profile: <https://www.nps.gov/im/arcn/muskox.htm>.
