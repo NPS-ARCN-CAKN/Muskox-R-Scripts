@@ -39,7 +39,7 @@ Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nun
 # SurveyName = '1985 Seward Peninsula Muskox Survey'	# 0 records			
 # SurveyName = '1988 Cape Krusenstern Muskox Survey'	# 1 records			
 # SurveyName = '1988 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
+SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
 # SurveyName = '1994 Cape Lisburne Muskox Survey'	# 24 records			
 # SurveyName = '1996 Seward Peninsula Muskox Survey'	# 0 records			
 # SurveyName = '1997 Cape Krusenstern Muskox Survey'	# 6 records			
@@ -47,13 +47,13 @@ Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nun
 # SurveyName = '1998 Cape Krusenstern Muskox Population Survey'	# 43 records			
 # SurveyName = '1998 Seward Peninsula Muskox Population Survey'	# 108 records			
 # SurveyName = '1999 Cape Krusenstern Muskox Survey'	# 35 records			
-# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 41 records			
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records			
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records			
 # SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
-SurveyName = '2011 Muskox Population Survey'	# 0 records			
+# SurveyName = '2001 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 39 records			
+# SurveyName = '2011 Muskox Population Survey'	# 0 records			
 # SurveyName = '2012 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '2013 Seward Peninsula Muskox Population Survey'	# 0 records			
-# SurveyName = '2014 Seward Peninsula Muskox Population Survey'	# 0 records			
-# SurveyName = '2015 Muskox Survey'	# 0 records
+# SurveyName = '2013 Seward Peninsula Muskox Population Survey'	# 0 records
 
 ```
 
@@ -151,25 +151,27 @@ sf_data <- st_as_sf(UCUs, wkt = "WKT", crs = 4326)
 
 # Get the observations having valid lat/lons
 Points = o %>% filter(Lat > 1)
-MinLat = min(Points$Lat,na.rm=TRUE)
-MaxLat = max(Points$Lat,na.rm=TRUE)
-MinLon = min(Points$Lon,na.rm=TRUE)
-MaxLon = max(Points$Lon,na.rm=TRUE)
-MeanLat = mean(Points$Lat,na.rm=TRUE)
-MeanLon = mean(Points$Lon,na.rm=TRUE)
-# Break the group sizes out into categories so we can use it to show relative group size on the map. Muskox values can be way too large and consume the map space
-Points$Size = cut(Points$Muskox, breaks = 20, labels = FALSE, include.lowest = TRUE)
 
-# Get a bounding box to narrow in the map on the observations
-BoundingBox <- data.frame(
-  Lon = c(MinLon,MinLon,MaxLon,MaxLon,MinLon),  # Close the shape by repeating the first point
-  Lat = c(MinLat,MaxLat,MaxLat,MinLat,MinLat)
-)
 ```
 
 ```{r,echo=FALSE,warning=FALSE,fig.cap="Figure 1. Map of muskox observations. Symbol size represents group size. Note: only observations having spatial coordinates are shown."}
 # Build a Leaflet map
 if (nrow(Points) > 0){
+  
+    MinLat = min(Points$Lat,na.rm=TRUE)
+  MaxLat = max(Points$Lat,na.rm=TRUE)
+  MinLon = min(Points$Lon,na.rm=TRUE)
+  MaxLon = max(Points$Lon,na.rm=TRUE)
+  MeanLat = mean(Points$Lat,na.rm=TRUE)
+  MeanLon = mean(Points$Lon,na.rm=TRUE)
+  # Break the group sizes out into categories so we can use it to show relative group size on the map. Muskox values can be way too large and consume the map space
+  Points$Size = cut(Points$Muskox, breaks = 20, labels = FALSE, include.lowest = TRUE)
+  # Get a bounding box to narrow in the map on the observations
+  BoundingBox <- data.frame(
+    Lon = c(MinLon,MinLon,MaxLon,MaxLon,MinLon),  # Close the shape by repeating the first point
+    Lat = c(MinLat,MaxLat,MaxLat,MinLat,MinLat)
+  )
+  
   leaflet(Points) %>%
 
     # Set the view
@@ -398,6 +400,58 @@ if(nrow(QC)>0){
 }
 
 ```
+
+
+## QC-4: Survey with NULL Date values
+
+Muskox group observations should each have the date recorded. The quality control test below shows surveys having one or more NULL values in the Date columns.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-3. QC_Observations_DateIsNULL query results.",sep=""),results='asis'}
+Sql = paste("SELECT SurveyName, n  FROM [QC_Observations_DateIsNULL] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
+
+## QC-5: Latitude and/or Longitude may not be zero
+
+Latitude/Longitude values may be NULL, but they may not be zero.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-3. QC_Observations_LatOrLonIsNULL query results.",sep=""),results='asis'}
+Sql = paste("SELECT SurveyName,GroupNumber,Lat,Lon,Notes  FROM [QC_Observations_LatOrLonIsNULL] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
+
+## QC-6: Observations outside park boundaries
+
+Quality control check QC_Observations_SurveysWithObservationsOutsideParks returns surveys having observations outside the park boundaries. This QC check is advisory: Muskox commonly roam outside the parks and surveys are frequently conducted with Alaska Department of Fish and Game to whom federal boundaries are immaterial.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-3. QC_Observations_SurveysWithObservationsOutsideParks query results.",sep=""),results='asis'}
+Sql = paste("SELECT *  FROM [QC_Observations_SurveysWithObservationsOutsideParks] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
+QC = dbGetQuery(Connection,Sql)
+if(nrow(QC)>0){
+  cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
+  print(knitr::kable(QC))
+}else{
+  cat("**PASSED** - QC query returned 0 results.")
+}
+
+```
+
 
 ```{r,echo=FALSE,warning=FALSE,include=FALSE}
 # This section copies the output file to a new html file titled with the survey name
