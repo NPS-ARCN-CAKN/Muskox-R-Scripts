@@ -32,29 +32,20 @@ Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nun
 
 # Change SurveyName to the name of the survey to write the summary report for
 # To get a list of SurveyNames execute the below query
-# dbGetQuery(Connection,"SELECT '# SurveyName = ''' + SurveyName + '''','# ' + Convert(Varchar(3),n) + ' records' as RecordCount FROM Dashboard ORDER BY SurveyName")
+# dbGetQuery(Connection,"SELECT '# SurveyName = ''' + SurveyName + '''','# ' + Convert(Varchar(3),n) + ' records' as RecordCount FROM Dashboard WHERE n>0 ORDER BY SurveyName")
 # ---------------------------------------------------------------------
-# SurveyName = '1983 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '1984 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '1985 Seward Peninsula Muskox Survey'	# 0 records			
 # SurveyName = '1988 Cape Krusenstern Muskox Survey'	# 1 records			
-# SurveyName = '1988 Seward Peninsula Muskox Survey'	# 0 records			
-SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
+# SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
 # SurveyName = '1994 Cape Lisburne Muskox Survey'	# 24 records			
-# SurveyName = '1996 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '1997 Cape Krusenstern Muskox Survey'	# 6 records			
-# SurveyName = '1997 Cape Lisburne-Cape Krusenstern Muskoxen Census'	# 26 records
+SurveyName = '1997 Cape Krusenstern Muskox Survey'	# 6 records			
+# SurveyName = '1997 Cape Lisburne-Cape Krusenstern Muskoxen Census'	# 26 records			
 # SurveyName = '1998 Cape Krusenstern Muskox Population Survey'	# 43 records			
 # SurveyName = '1998 Seward Peninsula Muskox Population Survey'	# 108 records			
 # SurveyName = '1999 Cape Krusenstern Muskox Survey'	# 35 records			
 # SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records			
-# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records			
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records
 # SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
-# SurveyName = '2001 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 39 records			
-# SurveyName = '2011 Muskox Population Survey'	# 0 records			
-# SurveyName = '2012 Seward Peninsula Muskox Survey'	# 0 records			
-# SurveyName = '2013 Seward Peninsula Muskox Population Survey'	# 0 records
-
+# SurveyName = '2001 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 39 records
 ```
 
 ```{r,echo=FALSE,warning=FALSE}
