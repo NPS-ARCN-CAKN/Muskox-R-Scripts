@@ -3,8 +3,10 @@ title: ''
 output:
   html_document:
     toc: true
-    toc_depth: 4
     toc_float: true
+    toc_collapse: false
+    smooth_scroll: true
+    toc_depth: 5
 date: ""
 ---
 
@@ -32,20 +34,27 @@ Connection = dbConnect(odbc(),Driver = "Sql Server",Server = "inpyugamsvm01\\nun
 
 # Change SurveyName to the name of the survey to write the summary report for
 # To get a list of SurveyNames execute the below query
-# dbGetQuery(Connection,"SELECT '# SurveyName = ''' + SurveyName + '''','# ' + Convert(Varchar(3),n) + ' records' as RecordCount FROM Dashboard WHERE n>0 ORDER BY SurveyName")
+# dbGetQuery(Connection,"SELECT '# SurveyName = ''' + SurveyName + '''  # ' + SurveyType + ' survey (' + Convert(Varchar(3),n) + ' records)' as RecordCount FROM Dashboard WHERE n>0 ORDER BY SurveyName")
 # ---------------------------------------------------------------------
-# SurveyName = '1988 Cape Krusenstern Muskox Survey'	# 1 records			
-# SurveyName = '1992 Seward Peninsula Muskox Survey'	# 5 records			
-# SurveyName = '1994 Cape Lisburne Muskox Survey'	# 24 records			
-SurveyName = '1997 Cape Krusenstern Muskox Survey'	# 6 records			
-# SurveyName = '1997 Cape Lisburne-Cape Krusenstern Muskoxen Census'	# 26 records			
-# SurveyName = '1998 Cape Krusenstern Muskox Population Survey'	# 43 records			
-# SurveyName = '1998 Seward Peninsula Muskox Population Survey'	# 108 records			
-# SurveyName = '1999 Cape Krusenstern Muskox Survey'	# 35 records			
-# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records			
-# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 83 records
-# SurveyName = '2000 Seward Peninsula Muskox Survey'	# 132 records			
-# SurveyName = '2001 Cape Lisburne-Cape Krusenstern Muskox Survey'	# 39 records
+# SurveyName = '1988 Cape Krusenstern Muskox Population Survey' # Population survey (1 records)				
+# SurveyName = '1992 Seward Peninsula Muskox Population Survey' # Population survey (5 records)				
+# SurveyName = '1994 Cape Lisburne Muskox Population Survey' # Population survey (24 records)				
+# SurveyName = '1997 Cape Krusenstern Muskox Population Survey' # Population survey (6 records)				
+# SurveyName = '1997 Cape Lisburne-Cape Krusenstern Muskoxen Population Census' # Population survey (26 records)				
+# SurveyName = '1998 Cape Krusenstern Muskox Population Survey' # Population survey (43 records)				
+# SurveyName = '1998 Seward Peninsula Muskox Population Survey' # Population survey (108 records)				
+# SurveyName = '1999 Cape Krusenstern Muskox Composition Survey' # Composition survey (1 records)				
+# SurveyName = '1999 Cape Krusenstern Muskox Population Survey' # Population survey (35 records)				
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Population Survey' # Population survey (83 records)
+# SurveyName = '2000 Cape Lisburne-Cape Krusenstern Muskox Population Survey' # Population survey (83 records)				
+# SurveyName = '2000 Seward Peninsula Muskox Population Survey' # Population survey (132 records)				
+# SurveyName = '2001 Cape Krusenstern Muskox Composition Survey' # Composition survey (1 records)				
+# SurveyName = '2001 Cape Lisburne-Cape Krusenstern Muskox Population Survey' # Population survey (39 records)				
+# SurveyName = '2002 Cape Krusenstern Muskox Composition Survey' # Composition survey (170 records)				
+# SurveyName = '2002 Cape Krusenstern Muskox Composition Survey' # Composition survey (170 records)				
+# SurveyName = '2002 Cape Krusenstern Muskox Population Survey' # Population survey (17 records)				
+SurveyName = '2002 Seward Peninsula Muskox Composition Survey' # Composition survey (157 records)				
+# SurveyName = '2002 Seward Peninsula Muskox Population Survey' # Population survey (157 records)
 ```
 
 ```{r,echo=FALSE,warning=FALSE}
@@ -74,12 +83,35 @@ Abstract = c$Abstract
 
 
 # Survey observations
-Sql = paste("SELECT SurveyName, Date,GMU, Unit, GroupNumber, Calf,ShortYearling, Yearling, Adult, Bull, Cow, Unknown, Muskox, Observer
---, BullAge2, BullAge3, BullAge4, BullAge4Plus, CowAge1, CowAge2, CowAge3, GroupSizeCategory, Random, GroupPriority, Waypoint, Aircraft
-, Lat, Lon, LocationDescription, SourceFilename, Notes
---, SOPNumber, SOPVersion, CertificationDate, CertifiedBy, CertificationLevel, RecordInsertedDate, RecordInsertedBy, CCID, UCU
--- , Geog
-FROM     Observations
+Sql = paste("SELECT SurveyName
+, Date
+, GMU
+, Unit
+, GroupNumber
+, Calf
+, ShortYearling
+, Yearling
+, Adult
+, Bull
+, Cow
+, Unclassified
+, TotalPop
+, BullAge2
+, BullAge3
+, BullAge4
+, BullAge4Plus
+, BullAge5Plus
+, CowAge1
+, CowAge2
+, CowAge3
+, CowAge3Plus
+, CowAge4
+--, GroupSizeCategory, Random, GroupPriority, Waypoint, Aircraft
+, Lat, Lon
+, LocationDescription, Observer
+--, SourceFilename
+, Notes
+FROM  Observations
 WHERE SurveyName='",SurveyName,"'
 ORDER BY GroupNumber",sep="")
 o = dbGetQuery(Connection,Sql)
@@ -102,6 +134,11 @@ Anchorage, AK 99501
 # Abstract
 
 `r Abstract`
+
+```{r, include=FALSE}
+# Placeholder for TOC
+```
+
 
 # Introduction
 
@@ -136,7 +173,7 @@ A map of the survey area and muskox groups for which spatial coordinates were re
 
 ```{r,echo=FALSE,warning=FALSE}
 # Get the ADFG UCUs into a simple features data frame
-UCUs = dbGetQuery(Connection,"SELECT UCU, Feature.STAsText() AS WKT FROM ADFG_UCU")
+UCUs = dbGetQuery(Connection,"SELECT Unit,Boundary.STAsText() AS WKT FROM Units")
 # Convert WKT to sf objects
 sf_data <- st_as_sf(UCUs, wkt = "WKT", crs = 4326)
 
@@ -156,7 +193,7 @@ if (nrow(Points) > 0){
   MeanLat = mean(Points$Lat,na.rm=TRUE)
   MeanLon = mean(Points$Lon,na.rm=TRUE)
   # Break the group sizes out into categories so we can use it to show relative group size on the map. Muskox values can be way too large and consume the map space
-  Points$Size = cut(Points$Muskox, breaks = 20, labels = FALSE, include.lowest = TRUE)
+  Points$Size = cut(Points$TotalPop, breaks = 20, labels = FALSE, include.lowest = TRUE)
   # Get a bounding box to narrow in the map on the observations
   BoundingBox <- data.frame(
     Lon = c(MinLon,MinLon,MaxLon,MaxLon,MinLon),  # Close the shape by repeating the first point
@@ -181,10 +218,10 @@ if (nrow(Points) > 0){
     ) %>%
     
     # UCU boundaries
-    addPolygons(data = sf_data,weight=1,color='black',fillOpacity = 0.1,label=~UCU,labelOptions = labelOptions(style = list("font-size" = "24px","font-style" = "italic", "font-weight" = "bold","color"="Gray"),textOnly = TRUE,noHide=TRUE))    %>%
+    addPolygons(data = sf_data,weight=1,color='black',fillOpacity = 0.1,label=~Unit,labelOptions = labelOptions(style = list("font-size" = "24px","font-style" = "italic", "font-weight" = "bold","color"="Gray"),textOnly = TRUE,noHide=TRUE))    %>%
   
     # Muskox groups and labels
-    addCircleMarkers(lng = ~Lon, lat = ~Lat,label=~Muskox,radius=~Size,color='red',fillColor = 'red',stroke=FALSE,fillOpacity = 0.5,
+    addCircleMarkers(lng = ~Lon, lat = ~Lat,label=~TotalPop,radius=~Size,color='red',fillColor = 'red',stroke=FALSE,fillOpacity = 0.5,
     labelOptions = labelOptions(noHide = TRUE, fill = FALSE, offset = c(5,2), textsize = "18px", textOnly = TRUE)
     ) %>%
     
@@ -222,45 +259,90 @@ TableCounter = TableCounter + 1
 
 Table `r TableCounter` summarizes the muskox counts by sex and age during the `r SurveyName`. Table `r TableCounter + 1` presents basic statistics about the muskox groups.
 
-## Counts by sex and age category.
+## Population Summary
 
-```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Muskox counts by sex and age category.",sep="")}
-Summary = o %>% summarize(
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Population survey results by sex and age category.",sep="")}
+PopulationSurveySummary = o %>% summarize(
   Calf = round(sum(Calf),1),
   ShortYearling = round(sum(ShortYearling),1),
   Yearling = round(sum(Yearling),1),
   Bull = round(sum(Bull),1),
   Cow = round(sum(Cow),1),
   Adult = round(sum(Adult),1),
-  Unknown = round(sum(Unknown),1),
-  Total = round(sum(Muskox),1),
+  Unclassified = round(sum(Unclassified),1),
+  Total = round(sum(TotalPop),1),
   Groups = n()
   )
-knitr::kable(t(Summary))
+knitr::kable(t(PopulationSurveySummary))
 TableCounter = TableCounter + 1
+
+# Loop through column names
+# for (ColName in colnames(o)) {
+#   cat(paste(ColName," = round(sum(",ColName,"),1),\n",sep = ""))
+# }
+
+
 ```
 
-## Summary Statistics
+Population summary statistics appear in Table `r TableCounter`.
 
 ```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Summary statistics.",sep="")}
 
 Stats = o %>% summarize(
-  `Mean group size` = round(mean(Muskox),1),
-  `Minimum group size` = round(min(Muskox),0),
-  `Maximum group size` = round(max(Muskox),0),
-  `Standard deviation` = round(sd(Muskox),1),
+  `Mean group size` = round(mean(TotalPop),1),
+  `Minimum group size` = round(min(TotalPop),0),
+  `Maximum group size` = round(max(TotalPop),0),
+  `Standard deviation` = round(sd(TotalPop),1),
   `Calf:Adult (%)` = round(sum(Calf)/sum(Adult)*100,1),
-  `Percent calves` = round(sum(Calf)/sum(Muskox)*100,1),
+  `Percent calves` = round(sum(Calf)/sum(TotalPop)*100,1),
   `ShortYearling:Adult (%)` = round(sum(ShortYearling)/sum(Adult)*100,1),
-  `Percent short yearlings` = round(sum(ShortYearling)/sum(Muskox)*100,1),
+  `Percent short yearlings` = round(sum(ShortYearling)/sum(TotalPop)*100,1),
   `Yearling:Adult (%)` = round(sum(Yearling)/sum(Adult)*100,1),
-  `Percent yearlings` = round(sum(Yearling)/sum(Muskox)*100,1),
+  `Percent yearlings` = round(sum(Yearling)/sum(TotalPop)*100,1),
   Groups = round(n(),0)
   )
 knitr::kable(t(Stats))
 TableCounter = TableCounter + 1
 
 ```
+
+## Composition Summary
+
+Muskox group composition by sex and age appears in Table `r TableCounter`.
+
+```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table ",TableCounter,". Composition survey results by sex and age category.",sep="")}
+# CompositionSurveySummary = o %>% summarize(
+#   Calf = round(sum(Calf,na.rm = TRUE),1),
+#   ShortYearling = round(sum(ShortYearling),1),
+#   Yearling = round(sum(Yearling,na.rm = TRUE),1),
+#   # Adult = round(sum(Adult,na.rm = TRUE),1),
+#   # Bull = round(sum(Bull),1),
+#   # Cow = round(sum(Cow,na.rm = TRUE),1),
+#   Unclassified = round(sum(Unclassified),1),
+#   BullAge2 = round(sum(BullAge2,na.rm = TRUE),1),
+#   BullAge3 = round(sum(BullAge3),1),
+#   BullAge4 = round(sum(BullAge4,na.rm = TRUE),1),
+#   BullAge4Plus = round(sum(BullAge4Plus,na.rm = TRUE),1),
+#   BullAge5Plus = round(sum(BullAge5Plus),1),
+#   CowAge1 = round(sum(CowAge1,na.rm = TRUE),1),
+#   CowAge2 = round(sum(CowAge2),1),
+#   CowAge3 = round(sum(CowAge3,na.rm = TRUE),1),
+#   CowAge3Plus = round(sum(CowAge3Plus,na.rm = TRUE),1),
+#   CowAge4 = round(sum(CowAge4,na.rm = TRUE),1),
+#   Total = round(sum(TotalPop,na.rm = TRUE),1),
+#   Groups = n(),
+#   x=sum(CowAge2,na.rm = TRUE)
+#   )
+
+Sql = paste("SELECT *
+FROM Summary_Results
+WHERE (SurveyName = '",SurveyName,"')",sep="")
+CompositionSurveySummary = dbGetQuery(Connection,Sql)
+knitr::kable(t(CompositionSurveySummary))
+TableCounter = TableCounter + 1
+
+```
+
 
 # Provenance
 
@@ -296,7 +378,7 @@ Data from Inventory and Monitoring projects proceeds through a disciplined life 
 Table `r TableCounter`. Inventory and Monitoring dataset certification levels.
 
 | Level | Definition |
-|-----------------|-------------------------------------------------------|
+|------------------|------------------------------------------------------|
 | Raw | 'Raw' data are data collected from the field with no further processing for quality |
 | Provisional | 'Provisional' data have undergone rudimentary quality control processing, are judged to be of high quality based on information and files available at the time of publication, but for which no secondary source such as a report exists to validate the data quality. Provisional records often belong to surveys that were performed in the past for which no report exists. |
 | Certified | 'Certified' data represent data of analytical quality. Quality control procedures exist, validation against secondary sources has been performed and/or the biologist who collected the data or the project leader have indicated it is of high quality. |
@@ -352,19 +434,20 @@ if(nrow(QC)>0){
 The Muskox column of the Observations database table should sum to all the sex and age categories. This check shows records violating this assumption. False positives may result if a survey only counted animals without breaking them down into sub-categories.
 
 ```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-2. QC_Observations_TotalMuskoxNotSummingProperly query results.",sep=""),results='asis'}
-Sql = paste("SELECT [GroupNumber]
-,[Muskox]
-,[Total (calculated)]
-,[Calf]
-,[Yearling]
-,[Adult]
-,[Bull]
-,[Cow]
-,[Unknown]
-,[ShortYearling]
---,[SourceFilename]
-,Notes
- FROM [ARCN_Muskox].[dbo].[QC_Observations_TotalMuskoxNotSummingProperly]
+Sql = paste("SELECT 
+      [GroupNumber]
+      ,[TotalPop]
+      ,[Total (calculated)]
+      ,[Calf]
+      ,[Yearling]
+      ,[Adult]
+      ,[Bull]
+      ,[Cow]
+      ,[Unclassified]
+      ,[ShortYearling]
+      ,[SourceFilename]
+      ,[Notes]
+  FROM [ARCN_Muskox].[dbo].[QC_Observations_TotalMuskoxNotSummingProperly]
   WHERE SurveyName='",SurveyName,"' ORDER BY GroupNumber",sep="")
 QC = dbGetQuery(Connection,Sql)
 if(nrow(QC)>0){
@@ -392,7 +475,6 @@ if(nrow(QC)>0){
 
 ```
 
-
 ## QC-4: Survey with NULL Date values
 
 Muskox group observations should each have the date recorded. The quality control test below shows surveys having one or more NULL values in the Date columns.
@@ -409,13 +491,12 @@ if(nrow(QC)>0){
 
 ```
 
-
 ## QC-5: Latitude and/or Longitude may not be zero
 
 Latitude/Longitude values may be NULL, but they may not be zero.
 
 ```{r,echo=FALSE,warning=FALSE,tab.cap=paste("Table QC-3. QC_Observations_LatOrLonIsNULL query results.",sep=""),results='asis'}
-Sql = paste("SELECT SurveyName,GroupNumber,Lat,Lon,Notes  FROM [QC_Observations_LatOrLonIsNULL] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
+Sql = paste("SELECT * FROM [QC_Observations_LatOrLonIsNULL] WHERE SurveyName='",SurveyName,"' ORDER BY SurveyName",sep="")
 QC = dbGetQuery(Connection,Sql)
 if(nrow(QC)>0){
   cat("**FAILED** - QC query returned ",nrow(QC)," results. See results table.\n\n")
@@ -425,7 +506,6 @@ if(nrow(QC)>0){
 }
 
 ```
-
 
 ## QC-6: Observations outside park boundaries
 
@@ -442,7 +522,6 @@ if(nrow(QC)>0){
 }
 
 ```
-
 
 ```{r,echo=FALSE,warning=FALSE,include=FALSE}
 # This section copies the output file to a new html file titled with the survey name
